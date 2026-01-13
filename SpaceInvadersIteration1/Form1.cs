@@ -385,6 +385,8 @@ namespace SpaceInvadersIteration1
             }
         }
 
+        //blah blah
+
         private void ShootBullet()
         {
             int bulletX = rectPlayer.X + (rectPlayer.Width / 2);
