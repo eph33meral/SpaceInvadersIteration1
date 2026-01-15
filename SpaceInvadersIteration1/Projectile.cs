@@ -11,9 +11,10 @@ namespace SpaceInvadersIteration1
         public Rectangle Rect;
         public int projectileSpeed = 30;
 
-        public Projectile(int x, int y)
+        public Projectile(int x, int y, int ProjSpeed)
         {
             Rect = new Rectangle(x, y, 4, 12);
+            projectileSpeed = ProjSpeed;
         }
 
         public void Update()

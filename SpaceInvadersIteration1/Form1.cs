@@ -43,6 +43,9 @@ namespace SpaceInvadersIteration1
         List<Rectangle> Enemies = new List<Rectangle>();
         List<Projectile> Projectiles = new List<Projectile>();
         List<Projectile> disposeProjectiles = new List<Projectile>();
+
+        List<Projectile> enemyProjectiles = new List<Projectile>();
+
         List<Rectangle> disposeEnemy = new List<Rectangle>();
         public int[] enemyHP = new int[0];
         private readonly object enemyLock = new();
@@ -250,7 +253,7 @@ namespace SpaceInvadersIteration1
 
             if (e.KeyCode == Keys.Space)
             {
-                ShootBullet();
+                ShootBullet(rectPlayer, Projectiles);
             }
         }
 
@@ -308,10 +311,6 @@ namespace SpaceInvadersIteration1
             if (rectPlayer.IntersectsWith(leftPanel))
                 rectPlayer.X = leftPanel.Right;
 
-            if (rectPlayer.Top < defence1.Height + rectPlayer.Height)
-            {
-                
-            }
         }
 
         private async void enemyMovement()
@@ -387,13 +386,13 @@ namespace SpaceInvadersIteration1
 
         //blah blah
 
-        private void ShootBullet()
+        private void ShootBullet(Rectangle rect, List<Projectile> projectiles)
         {
-            int bulletX = rectPlayer.X + (rectPlayer.Width / 2);
-            int bulletY = rectPlayer.Y;
+            int bulletX = rect.X + (rect.Width / 2);
+            int bulletY = rect.Y;
 
-            Projectile p = new Projectile(bulletX, bulletY);
-            Projectiles.Add(p);
+            Projectile p = new Projectile(bulletX, bulletY, 20);
+            projectiles.Add(p);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
