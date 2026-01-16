@@ -34,8 +34,6 @@ namespace SpaceInvadersIteration1
             rectPlayer = new Rectangle(),
             leftPanel = new Rectangle(),
             rightPanel = new Rectangle(),
-            powerBarMax = new Rectangle(),
-            powerBarCurrent = new Rectangle(),
             defence1 = new Rectangle(),
             defence2 = new Rectangle(),
             defence3 = new Rectangle();
@@ -48,7 +46,10 @@ namespace SpaceInvadersIteration1
 
         List<Rectangle> disposeEnemy = new List<Rectangle>();
         public int[] enemyHP = new int[0];
+        public int[] playerHP = new int[0];
         private readonly object enemyLock = new();
+
+        Powerups powerups;
 
 
         Thread moveenemyis;
@@ -68,15 +69,6 @@ namespace SpaceInvadersIteration1
             rightPanel.Width = ClientSize.Width / 6;
             rightPanel.Height = ClientSize.Height;
             rightPanel.Location = new Point(ClientSize.Width - rightPanel.Width, ClientSize.Height - rightPanel.Height);
-
-            powerBarMax.Width = ClientSize.Width / 12;
-            powerBarMax.Height = 900;
-            powerBarMax.Location = new Point(ClientSize.Width - 230, 30);
-
-            powerBarCurrent.Width = powerBarMax.Width - 10;
-            powerBarCurrent.Height = powerBarMax.Height - 10;
-            powerBarCurrent.Location = new Point(powerBarMax.X + (powerBarMax.Width - powerBarCurrent.Width) / 2,
-                powerBarMax.Y + (powerBarMax.Height - powerBarCurrent.Height) / 2);
 
             defence3.Width = 180;
             defence3.Height = 100;
@@ -123,6 +115,8 @@ namespace SpaceInvadersIteration1
             this.BackColor = Color.Black;
             this.DoubleBuffered = true;
 
+            powerups = new Powerups(ClientSize);
+
             int
                 startX = leftPanel.Width + 10,
                 startY = 10,
@@ -141,6 +135,8 @@ namespace SpaceInvadersIteration1
 
             Array.Resize(ref enemyHP, Enemies.Count);
             Array.Fill(enemyHP, 2);
+
+            Array.Fill(playerHP, 3);
         }
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -148,18 +144,17 @@ namespace SpaceInvadersIteration1
             Graphics g = e.Graphics;
             Brush b = new SolidBrush(Color.FromArgb(92, 70, 154));
             Brush b2 = new SolidBrush(Color.FromArgb(136, 76, 167));
-            Brush b3 = new SolidBrush(Color.Black);
             Brush b4 = new SolidBrush(Color.Red);
-            Brush b5 = new SolidBrush(Color.FromArgb(255, 253, 187));
             Brush b6 = new SolidBrush(Color.FromArgb(0, 150, 255));
             g.FillRectangle(b, leftPanel);
             g.FillRectangle(b, rightPanel);
             g.FillRectangle(b2, rectPlayer);
-            g.FillRectangle(b3, powerBarMax);
-            g.FillRectangle(b5, powerBarCurrent);
+            
             g.FillRectangle(b6, defence1);
             g.FillRectangle(b6, defence2);
             g.FillRectangle(b6, defence3);
+
+            powerups.draw(g);
 
             lock (enemyLock)
             {
@@ -310,7 +305,6 @@ namespace SpaceInvadersIteration1
 
             if (rectPlayer.IntersectsWith(leftPanel))
                 rectPlayer.X = leftPanel.Right;
-
         }
 
         private async void enemyMovement()
@@ -372,7 +366,12 @@ namespace SpaceInvadersIteration1
                         gameEnd = true;
                     }
 
-                    if (enemy.Bottom > this.ClientSize.Height - this.ClientSize.Height / 2)
+                    if (enemy.Bottom > this.ClientSize.Height)
+                    {
+                        gameEnd = true;
+                    }
+
+                    if (enemy.IntersectsWith(defence3))
                     {
                         gameEnd = true;
                     }
