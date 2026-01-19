@@ -47,10 +47,10 @@
             lblHighScore.Size = new Size(100, 23);
             lblHighScore.TabIndex = 0;
             // 
-            // currentScore
+            // lblCurrentScore
             // 
             lblCurrentScore.Location = new Point(0, 0);
-            lblCurrentScore.Name = "currentScore";
+            lblCurrentScore.Name = "lblCurrentScore";
             lblCurrentScore.Size = new Size(100, 23);
             lblCurrentScore.TabIndex = 0;
             // 

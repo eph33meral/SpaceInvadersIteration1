@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Security.Cryptography;
 
 namespace SpaceInvadersIteration1
 {
@@ -16,7 +17,10 @@ namespace SpaceInvadersIteration1
             enemyWidth = 70,
             enemyHeight = 70,
             gcDisposeCount = 0,
-            shootCooldown = 0;
+            shootCooldown = 0,
+            intOpacity1 = 100,
+            intOpacity2 = 100,
+            intOpacity3 = 100;
 
         enum Direction { Left, Right }
 
@@ -38,9 +42,16 @@ namespace SpaceInvadersIteration1
             defence2 = new Rectangle(),
             defence3 = new Rectangle();
 
+        PictureBox
+            playerhearts3 = new PictureBox(),
+            playerheart2 = new PictureBox(),
+            playerheart1 = new PictureBox(),
+            playerheart0 = new PictureBox();
+
         List<Rectangle> Enemies = new List<Rectangle>();
         List<Projectile> Projectiles = new List<Projectile>();
         List<Projectile> disposeProjectiles = new List<Projectile>();
+        List<Rectangle> disposeDefences = new List<Rectangle>();
 
         List<Projectile> enemyProjectiles = new List<Projectile>();
 
@@ -49,7 +60,10 @@ namespace SpaceInvadersIteration1
         public int[] playerHP = new int[0];
         private readonly object enemyLock = new();
 
+        Random rnf = new Random();
+
         Powerups powerups;
+
 
 
         Thread moveenemyis;
@@ -133,6 +147,8 @@ namespace SpaceInvadersIteration1
                 }
             }
 
+            
+
             Array.Resize(ref enemyHP, Enemies.Count);
             Array.Fill(enemyHP, 2);
 
@@ -145,14 +161,18 @@ namespace SpaceInvadersIteration1
             Brush b = new SolidBrush(Color.FromArgb(92, 70, 154));
             Brush b2 = new SolidBrush(Color.FromArgb(136, 76, 167));
             Brush b4 = new SolidBrush(Color.Red);
-            Brush b6 = new SolidBrush(Color.FromArgb(0, 150, 255));
+            Brush defence1Paint = new SolidBrush(Color.FromArgb(intOpacity1, Color.DeepSkyBlue));
+            Brush defence2Paint = new SolidBrush(Color.FromArgb(intOpacity2, Color.DeepSkyBlue));
+            Brush defence3Paint = new SolidBrush(Color.FromArgb(intOpacity3, Color.DeepSkyBlue));
+
             g.FillRectangle(b, leftPanel);
             g.FillRectangle(b, rightPanel);
-            g.FillRectangle(b2, rectPlayer);
+            //g.FillRectangle(b2, rectPlayer);
+            g.DrawImage(Properties.Resources.Main_character1, rectPlayer.Location);
             
-            g.FillRectangle(b6, defence1);
-            g.FillRectangle(b6, defence2);
-            g.FillRectangle(b6, defence3);
+            g.FillRectangle(defence1Paint, defence1);
+            g.FillRectangle(defence2Paint, defence2);
+            g.FillRectangle(defence3Paint, defence3);
 
             powerups.draw(g);
 
@@ -160,7 +180,8 @@ namespace SpaceInvadersIteration1
             {
                 foreach (Rectangle Enemy in Enemies)
                 {
-                    g.FillRectangle(b4, Enemy);
+                    //g.FillRectangle(b4, Enemy);
+                    g.DrawImage(Properties.Resources.Enemy, Enemy.Location);
                 }
             }
 
@@ -208,6 +229,39 @@ namespace SpaceInvadersIteration1
                             intCurrentScore += 50;
                             break;
                         }
+                    }
+                }
+
+                if (Projectiles[i].Rect.IntersectsWith(defence1))
+                {
+                    disposeProjectiles.Add(Projectiles[i]);
+                    intOpacity1 -= 10;
+                    if (intOpacity1 <= 0)
+                    {
+                        intOpacity1 = 0;
+                        defence1 = Rectangle.Empty;
+                    }
+                }
+
+                if (Projectiles[i].Rect.IntersectsWith(defence2))
+                {
+                    disposeProjectiles.Add(Projectiles[i]);
+                    intOpacity2 -= 10;
+                    if (intOpacity2 <= 0)
+                    {
+                        intOpacity2 = 0;
+                        defence2 = Rectangle.Empty;
+                    }
+                }
+
+                if (Projectiles[i].Rect.IntersectsWith(defence3))
+                {
+                    disposeProjectiles.Add(Projectiles[i]);
+                    intOpacity3 -= 10;
+                    if (intOpacity3 <= 0)
+                    {
+                        intOpacity3 = 0;
+                        defence1 = Rectangle.Empty;
                     }
                 }
             }
