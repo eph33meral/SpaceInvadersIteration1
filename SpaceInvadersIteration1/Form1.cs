@@ -60,7 +60,7 @@ namespace SpaceInvadersIteration1
         public int[] playerHP = new int[0];
         private readonly object enemyLock = new();
 
-        Random rnf = new Random();
+        Random rng = new Random();
 
         Powerups powerups;
 
@@ -180,8 +180,8 @@ namespace SpaceInvadersIteration1
             {
                 foreach (Rectangle Enemy in Enemies)
                 {
-                    //g.FillRectangle(b4, Enemy);
-                    g.DrawImage(Properties.Resources.Enemy, Enemy.Location);
+                    g.FillRectangle(b4, Enemy);
+                    //g.DrawImage(Properties.Resources.Enemy, Enemy.Location);
                 }
             }
 
@@ -415,11 +415,6 @@ namespace SpaceInvadersIteration1
             {
                 foreach (Rectangle enemy in Enemies)
                 {
-                    if (Enemies.Count < 0)
-                    {
-                        gameEnd = true;
-                    }
-
                     if (enemy.Bottom > this.ClientSize.Height)
                     {
                         gameEnd = true;
@@ -436,8 +431,6 @@ namespace SpaceInvadersIteration1
                 Application.Exit();
             }
         }
-
-        //blah blah
 
         private void ShootBullet(Rectangle rect, List<Projectile> projectiles)
         {

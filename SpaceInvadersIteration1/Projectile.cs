@@ -10,6 +10,8 @@ namespace SpaceInvadersIteration1
     {
         public Rectangle Rect;
         public int projectileSpeed = 30;
+        public int projectileCD = 10;
+        public bool isActive;
 
         public Projectile(int x, int y, int ProjSpeed)
         {
@@ -31,6 +33,8 @@ namespace SpaceInvadersIteration1
         {
             return Rect.Y < -20;
         }
+
+        
 
     }
 }
