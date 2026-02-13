@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Security.Cryptography;
+using Microsoft.VisualBasic;
 
 namespace SpaceInvadersIteration1
 {
@@ -61,8 +62,6 @@ namespace SpaceInvadersIteration1
         private readonly object enemyLock = new();
 
         Random rng = new Random();
-
-        Powerups powerups;
 
 
 
@@ -129,8 +128,6 @@ namespace SpaceInvadersIteration1
             this.BackColor = Color.Black;
             this.DoubleBuffered = true;
 
-            powerups = new Powerups(ClientSize);
-
             int
                 startX = leftPanel.Width + 10,
                 startY = 10,
@@ -147,7 +144,7 @@ namespace SpaceInvadersIteration1
                 }
             }
 
-            
+
 
             Array.Resize(ref enemyHP, Enemies.Count);
             Array.Fill(enemyHP, 2);
@@ -169,12 +166,11 @@ namespace SpaceInvadersIteration1
             g.FillRectangle(b, rightPanel);
             //g.FillRectangle(b2, rectPlayer);
             g.DrawImage(Properties.Resources.Main_character1, rectPlayer.Location);
-            
+
             g.FillRectangle(defence1Paint, defence1);
             g.FillRectangle(defence2Paint, defence2);
             g.FillRectangle(defence3Paint, defence3);
 
-            powerups.draw(g);
 
             lock (enemyLock)
             {
@@ -445,5 +441,7 @@ namespace SpaceInvadersIteration1
         {
             MessageBox.Show($"you lose maybe or win idk here is youe score: {intCurrentScore}");
         }
+
+
     }
 }

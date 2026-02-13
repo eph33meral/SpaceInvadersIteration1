@@ -31,8 +31,6 @@ namespace SpaceInvadersIteration1
             powerBar.Height = powerBarBG.Height - 10;
             powerBar.Location = new Point(powerBarBG.X + (powerBarBG.Width - powerBar.Width) / 2,
             powerBarBG.Y + (powerBarBG.Height - powerBar.Height) / 2);
-
-
         }
 
         public void draw(Graphics g)
