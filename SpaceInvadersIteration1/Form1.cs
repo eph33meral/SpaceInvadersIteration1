@@ -442,6 +442,5 @@ namespace SpaceInvadersIteration1
             MessageBox.Show($"you lose maybe or win idk here is youe score: {intCurrentScore}");
         }
 
-
     }
 }
