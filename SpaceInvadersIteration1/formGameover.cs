@@ -36,14 +36,6 @@ namespace SpaceInvadersIteration1
             lblScore.AutoSize = true;
             this.Controls.Add(lblScore);
 
-            Label lblRestart = new Label();
-            lblRestart.Text = "PRESS R TO RESTART";
-            lblRestart.Font = new Font("MS Gothic", 30F);
-            lblRestart.ForeColor = Color.White;
-            lblRestart.Location = new Point(ClientSize.Width / 2 - 210, ClientSize.Height / 2 - 200);
-            lblRestart.AutoSize = true;
-            this.Controls.Add(lblRestart);
-
             Button btnHighscore = new Button();
             btnHighscore.Text = "HIGH SCORES";
             btnHighscore.Font = new Font("MS Gothic", 16F);
@@ -64,14 +56,6 @@ namespace SpaceInvadersIteration1
                 lblgameOver.Location = new Point(ClientSize.Width / 2 - 230, ClientSize.Height / 2 - 150);
                 lblScore.Location = new Point(ClientSize.Width / 2 - 180, ClientSize.Height / 2 - 40);
                 btnHighscore.Location = new Point(ClientSize.Width / 2 - 120, ClientSize.Height / 2 + 60);
-                lblRestart.Location = new Point(ClientSize.Width / 2 - 210, ClientSize.Height / 2 - 200);
-            };
-
-            this.KeyPreview = true;
-            this.KeyDown += (s, ev) =>
-            {
-                if (ev.KeyCode == Keys.R)
-                    this.Close();
             };
         }
 

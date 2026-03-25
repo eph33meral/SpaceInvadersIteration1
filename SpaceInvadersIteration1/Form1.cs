@@ -242,7 +242,6 @@ namespace SpaceInvadersIteration1
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (gameEnd) return;
 
             lblHighScore.Text = ($"HIGHSCORE: {intHighScore}");
             lblCurrentScore.Text = ($"SCORE: {intCurrentScore}");
@@ -373,7 +372,10 @@ namespace SpaceInvadersIteration1
 
             Invalidate();
 
-            GameOver();
+            if (gameEnd)
+            {
+                GameOver();
+            }
 
             if (!waveActive)
             {
@@ -642,8 +644,6 @@ namespace SpaceInvadersIteration1
             gameOverForm.ShowDialog();
 
             scoreSaved = false;
-            gameOverShown = false;
-            RestartGame();
             SpawnWave(currentWave);
             waveActive = true;
         }
@@ -705,56 +705,6 @@ namespace SpaceInvadersIteration1
 
             SpawnWave(currentWave);
             waveActive = true;
-        }
-
-        private void RestartGame()
-        {
-            intCurrentScore = 0;
-            playerHP = 3;
-            currentWave = 1;
-            waveActive = false;
-            intOpacity1 = 255;
-            intOpacity2 = 255;
-            intOpacity3 = 255;
-            gameEnd = false;
-
-            int defY = ClientSize.Height - (ClientSize.Height / 3);
-            defence1 = new Rectangle(leftPanel.Right + leftPanel.Width / 2, defY, 180, 100);
-            defence2 = new Rectangle(ClientSize.Width / 2 - 90, defY, 180, 100);
-            defence3 = new Rectangle(ClientSize.Width - rightPanel.Width * 2 - 180, defY, 180, 100);
-
-            rectPlayer.Location = new Point(ClientSize.Width / 2 - 30, ClientSize.Height - 100);
-
-            Enemies.Clear();
-            Projectiles.Clear();
-            enemyProjectiles.Clear();
-
-            timer1.Start();
-
-            // Restart threads
-            Thread enemyMoveThread = new Thread(() =>
-            {
-                while (!gameEnd)
-                {
-                    Thread.Sleep(enemyMoveInterval);
-                    this.Invoke(() => enemyMovement());
-                }
-            });
-            enemyMoveThread.IsBackground = true;
-            enemyMoveThread.Start();
-
-            Thread enemyShootThread = new Thread(() =>
-            {
-                while (!gameEnd)
-                {
-                    Thread.Sleep(enemyShootInterval);
-                    this.Invoke(() => EnemyShoot());
-                }
-            });
-            enemyShootThread.IsBackground = true;
-            enemyShootThread.Start();
-
-            Invalidate();
         }
     }
 }
