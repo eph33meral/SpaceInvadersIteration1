@@ -13,15 +13,22 @@ namespace SpaceInvadersIteration1
             intHighScore = 0,
             intCurrentScore = 0,
             playerSpeed = 8,
-            enemySpeed = 40,
-            enemySpacing = 30,
-            enemyWidth = 70,
-            enemyHeight = 70,
+            enemySpeed = 15,
+            enemySpacing = 70,
+            enemyHeight = 30,
+            enemyWidth = 30,
             gcDisposeCount = 0,
-            shootCooldown = 0,
-            intOpacity1 = 100,
-            intOpacity2 = 100,
-            intOpacity3 = 100;
+            intOpacity1 = 255,
+            intOpacity2 = 255,
+            intOpacity3 = 255,
+            currentWave = 1,
+            playerHP = 3,
+            enemyShootInterval = 1000,
+            enemyMoveInterval = 500,
+            waveSpeedBonus;
+
+        string playerName = "";
+        string leaderboardPath = "leaderboard.txt";
 
         enum Direction { Left, Right }
 
@@ -30,8 +37,10 @@ namespace SpaceInvadersIteration1
             Down,
             Left,
             Right,
-            canShoot,
-            gameEnd;
+            gameEnd,
+            waveActive = false,
+            scoreSaved = false,
+            gameOverShown = false;
 
         Direction direction = Direction.Left;
 
@@ -43,45 +52,30 @@ namespace SpaceInvadersIteration1
             defence2 = new Rectangle(),
             defence3 = new Rectangle();
 
-        PictureBox
-            playerhearts3 = new PictureBox(),
-            playerheart2 = new PictureBox(),
-            playerheart1 = new PictureBox(),
-            playerheart0 = new PictureBox();
-
-        List<Rectangle> Enemies = new List<Rectangle>();
+        List<Enemy> Enemies = new List<Enemy>();
         List<Projectile> Projectiles = new List<Projectile>();
         List<Projectile> disposeProjectiles = new List<Projectile>();
         List<Rectangle> disposeDefences = new List<Rectangle>();
 
         List<Projectile> enemyProjectiles = new List<Projectile>();
 
-        List<Rectangle> disposeEnemy = new List<Rectangle>();
-        public int[] enemyHP = new int[0];
-        public int[] playerHP = new int[0];
+        List<Enemy> disposeEnemy = new List<Enemy>();
         private readonly object enemyLock = new();
 
         Random rng = new Random();
 
-
-
-        Thread moveenemyis;
-
-        public Form1()
+        public Form1(string playerName)
         {
+            this.playerName = playerName;
             InitializeComponent();
 
             rectPlayer.Width = 60;
             rectPlayer.Height = 60;
             rectPlayer.Location = new Point(ClientSize.Width / 2, 965);
 
-            leftPanel.Width = ClientSize.Width / 6;
-            leftPanel.Height = ClientSize.Height;
-            leftPanel.Location = new Point(0, 0);
-
-            rightPanel.Width = ClientSize.Width / 6;
-            rightPanel.Height = ClientSize.Height;
-            rightPanel.Location = new Point(ClientSize.Width - rightPanel.Width, ClientSize.Height - rightPanel.Height);
+            leftPanel = new Rectangle(0, 0, ClientSize.Width / 10, ClientSize.Height);
+            rightPanel = new Rectangle(ClientSize.Width - ClientSize.Width / 10, 0,
+                                       ClientSize.Width / 10, ClientSize.Height);
 
             defence3.Width = 180;
             defence3.Height = 100;
@@ -95,98 +89,95 @@ namespace SpaceInvadersIteration1
             defence1.Height = 100;
             defence1.Location = new Point(leftPanel.Width + (leftPanel.Width / 2), ClientSize.Height - (ClientSize.Height / 3));
 
-            lblCurrentScore.Location = new Point(25, 150);
+            lblCurrentScore.Location = new Point(0, leftPanel.Width + 20);
             lblCurrentScore.Name = "currentScore";
-            lblCurrentScore.Size = new Size(280, 200);
+            lblCurrentScore.Size = new Size(160, 50);
             lblCurrentScore.TabIndex = 0;
             lblCurrentScore.ForeColor = Color.White;
             lblCurrentScore.BackColor = Color.Transparent;
-            lblCurrentScore.Font = new Font("MS Gothic", 25F);
+            lblCurrentScore.Font = new Font("MS Gothic", 15F);
             lblCurrentScore.TextAlign = ContentAlignment.MiddleCenter;
             this.Controls.Add(lblCurrentScore);
 
             lblHighScore.BackColor = Color.Transparent;
-            lblHighScore.Font = new Font("MS Gothic", 25F);
+            lblHighScore.Font = new Font("MS Gothic", 15F);
             lblHighScore.ForeColor = Color.White;
-            lblHighScore.Location = new Point(70, 30);
+            lblHighScore.Location = new Point(0, 10);
             lblHighScore.Name = "lblHighScore";
-            lblHighScore.Size = new Size(190, 100);
+            lblHighScore.Size = new Size(leftPanel.Width, 120);
             lblHighScore.TabIndex = 0;
             lblHighScore.TextAlign = ContentAlignment.MiddleCenter;
             this.Controls.Add(lblHighScore);
-
-            PictureBox playerHeart1 = new PictureBox();
-
-            moveenemyis = new Thread(enemyMovement);
-            moveenemyis.Start();
 
             timer1.Enabled = true;
             timer1.Start();
 
             FormWindowState formWindowState = FormWindowState.Maximized;
 
+            
+
             this.BackColor = Color.Black;
             this.DoubleBuffered = true;
-
-            int
-                startX = leftPanel.Width + 10,
-                startY = 10,
-                numRows = 3,
-                numCols = 8;
-
-            for (int row = 0; row < numRows; row++)
-            {
-                for (int col = 0; col < numCols; col++)
-                {
-                    int x = startX + col * (enemyWidth + enemySpacing);
-                    int y = startY + row * (enemyHeight + enemySpacing);
-                    Enemies.Add(new Rectangle(x, y, enemyWidth, enemyHeight));
-                }
-            }
-
-
-
-            Array.Resize(ref enemyHP, Enemies.Count);
-            Array.Fill(enemyHP, 2);
-
-            Array.Fill(playerHP, 3);
         }
+
+        
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+
             Graphics g = e.Graphics;
-            Brush b = new SolidBrush(Color.FromArgb(92, 70, 154));
-            Brush b2 = new SolidBrush(Color.FromArgb(136, 76, 167));
-            Brush b4 = new SolidBrush(Color.Red);
-            Brush defence1Paint = new SolidBrush(Color.FromArgb(intOpacity1, Color.DeepSkyBlue));
-            Brush defence2Paint = new SolidBrush(Color.FromArgb(intOpacity2, Color.DeepSkyBlue));
-            Brush defence3Paint = new SolidBrush(Color.FromArgb(intOpacity3, Color.DeepSkyBlue));
 
-            g.FillRectangle(b, leftPanel);
-            g.FillRectangle(b, rightPanel);
-            //g.FillRectangle(b2, rectPlayer);
-            g.DrawImage(Properties.Resources.Main_character1, rectPlayer.Location);
+            g.DrawImage(Properties.Resources.image,
+                0, 0, ClientSize.Width, ClientSize.Height);
 
-            g.FillRectangle(defence1Paint, defence1);
-            g.FillRectangle(defence2Paint, defence2);
-            g.FillRectangle(defence3Paint, defence3);
-
-
-            lock (enemyLock)
+            using (var b = new SolidBrush(Color.FromArgb(92, 70, 154)))
             {
-                foreach (Rectangle Enemy in Enemies)
-                {
-                    g.FillRectangle(b4, Enemy);
-                    //g.DrawImage(Properties.Resources.Enemy, Enemy.Location);
-                }
+                g.FillRectangle(b, leftPanel);
+                g.FillRectangle(b, rightPanel);
             }
 
-            lock (enemyLock)
+            if (!gameEnd)
             {
-                foreach (Projectile p in Projectiles)
+                g.DrawImage(Properties.Resources.Main_character1,
+                           new Rectangle(rectPlayer.Location, rectPlayer.Size));
+                if (intOpacity1 > 0)
+                    using (var db = new SolidBrush(Color.FromArgb(intOpacity1, Color.DeepSkyBlue)))
+                        g.FillRectangle(db, defence1);
+
+                if (intOpacity2 > 0)
+                    using (var db = new SolidBrush(Color.FromArgb(intOpacity2, Color.DeepSkyBlue)))
+                        g.FillRectangle(db, defence2);
+
+                if (intOpacity3 > 0)
+                    using (var db = new SolidBrush(Color.FromArgb(intOpacity3, Color.DeepSkyBlue)))
+                        g.FillRectangle(db, defence3);
+
+                lock (enemyLock)
                 {
-                    g.FillRectangle(Brushes.Yellow, p.Rect);
+                    foreach (Enemy enemy in Enemies)
+                        if (enemy.isAlive) enemy.Draw(g);
                 }
+
+                foreach (Projectile p in Projectiles)
+                    g.FillRectangle(Brushes.Yellow, p.Rect);
+
+                foreach (Projectile p in enemyProjectiles)
+                    g.FillRectangle(Brushes.OrangeRed, p.Rect);
+
+                g.DrawString("LIVES", new Font("MS Gothic", 16F),
+                 Brushes.White, new PointF(ClientSize.Width - rightPanel.Width + 10, 20));
+
+                for (int i = 0; i < playerHP; i++)
+                {
+                    g.DrawString("♥", new Font("MS Gothic", 28F),
+                                 Brushes.Red, new PointF(ClientSize.Width - rightPanel.Width + 20, 50 + (i * 38)));
+                }
+
+
+                g.DrawString($"WAVE: {currentWave}", new Font("MS Gothic", 16F),
+                             Brushes.White, new PointF(ClientSize.Width / 2 - 60, 10));
+
             }
         }
 
@@ -199,10 +190,62 @@ namespace SpaceInvadersIteration1
             }
         }
 
+        private void SpawnWave(int waveNumber)
+        {
+            lock (enemyLock)
+            {
+                Enemies.Clear();
+                Projectiles.Clear();
+                enemyProjectiles.Clear();
+
+                int actualWave = ((waveNumber - 1) % 4) + 1;
+                waveSpeedBonus = (waveNumber - 1) / 4;
+
+                enemySpeed = 2 + waveSpeedBonus;
+                enemyMoveInterval = Math.Max(20, 200 - (waveSpeedBonus * 100));
+
+                int startX = leftPanel.Width + 20;
+                int startY = 20;
+                int numCols = 8;
+
+                switch (actualWave)
+                {
+
+                    case 1:
+                        SpawnRows(startX, startY, 3, numCols, EnemyType.Large);
+                        break;
+                    case 2:
+                        SpawnRows(startX, startY, 2, numCols, EnemyType.Large);
+                        SpawnRows(startX, startY + 2 * (enemyHeight + enemySpacing), 1, numCols, EnemyType.Medium);
+                        break;
+                    case 3:
+                        SpawnRows(startX, startY, 2, numCols, EnemyType.Medium);
+                        SpawnRows(startX, startY + 2 * (enemyHeight + enemySpacing), 1, numCols, EnemyType.Small);
+                        break;
+                    case 4:
+                        SpawnRows(startX, startY, 1, 1 , EnemyType.Boss);
+                        break;
+                }
+            }
+        }
+
+        private void SpawnRows(int startX, int startY, int numRows, int numCols, EnemyType type)
+        {
+            for (int row = 0; row < numRows; row++)
+                for (int col = 0; col < numCols; col++)
+                {
+                    int x = startX + col * (enemyWidth + enemySpacing);
+                    int y = startY + row * (enemyHeight + enemySpacing);
+                    Enemies.Add(new Enemy(x, y, type));
+                }
+        }
+
         private void timer1_Tick(object sender, EventArgs e)
         {
+            if (gameEnd) return;
+
             lblHighScore.Text = ($"HIGHSCORE: {intHighScore}");
-            lblCurrentScore.Text = ($"CURRENT SCORE: {intCurrentScore}");
+            lblCurrentScore.Text = ($"SCORE: {intCurrentScore}");
             GcDispose();
 
             for (int i = Projectiles.Count - 1; i >= 0; i--)
@@ -216,13 +259,15 @@ namespace SpaceInvadersIteration1
 
                 for (int t = Enemies.Count - 1; t >= 0; t--)
                 {
-                    if (Projectiles[i].Rect.IntersectsWith(Enemies[t]))
+                    if (Projectiles[i].Rect.IntersectsWith(Enemies[t].enemyRect))
                     {
                         disposeProjectiles.Add(Projectiles[i]);
-                        if (--enemyHP[t] <= 0)
+                        Enemies[t].TakeDamage(1);
+
+                        if (!Enemies[t].isAlive)
                         {
                             disposeEnemy.Add(Enemies[t]);
-                            intCurrentScore += 50;
+                            intCurrentScore += Enemies[t].scoreValue;
                             break;
                         }
                     }
@@ -257,21 +302,95 @@ namespace SpaceInvadersIteration1
                     if (intOpacity3 <= 0)
                     {
                         intOpacity3 = 0;
-                        defence1 = Rectangle.Empty;
+                        defence3 = Rectangle.Empty;
                     }
                 }
             }
 
-            foreach (Rectangle x in disposeEnemy) Enemies.Remove(x);
+            for (int i = enemyProjectiles.Count - 1; i >= 0; i--)
+            {
+                enemyProjectiles[i].Update();
+
+                if (enemyProjectiles[i].IsOffScreen())
+                {
+                    enemyProjectiles.RemoveAt(i);
+                    continue;
+                }
+
+                if (enemyProjectiles[i].Rect.IntersectsWith(rectPlayer))
+                {
+                    enemyProjectiles.RemoveAt(i);
+                    playerHP--;
+                    if (playerHP <= 0)
+                    {
+                        gameEnd = true;
+                        timer1.Stop();
+                    }
+                    continue;
+                }
+
+                if (intOpacity1 > 0 && enemyProjectiles[i].Rect.IntersectsWith(defence1))
+                {
+                    enemyProjectiles.RemoveAt(i);
+                    intOpacity1 -= 25;
+                    if (intOpacity1 <= 0)
+                    {
+                        intOpacity1 = 0;
+                        defence1 = Rectangle.Empty;
+                    }
+                    continue;
+                }
+
+                if (intOpacity2 > 0 && enemyProjectiles[i].Rect.IntersectsWith(defence2))
+                {
+                    enemyProjectiles.RemoveAt(i);
+                    intOpacity2 -= 25;
+                    if (intOpacity2 <= 0)
+                    {
+                        intOpacity2 = 0;
+                        defence2 = Rectangle.Empty;
+                    }
+                    continue;
+                }
+
+                if (intOpacity3 > 0 && enemyProjectiles[i].Rect.IntersectsWith(defence3))
+                {
+                    enemyProjectiles.RemoveAt(i);
+                    intOpacity3 -= 25;
+                    if (intOpacity3 <= 0)
+                    {
+                        intOpacity3 = 0;
+                        defence3 = Rectangle.Empty;
+                    }
+                    continue;
+                }
+            }
+
+            foreach (Enemy x in disposeEnemy) Enemies.Remove(x);
             disposeEnemy.Clear();
             foreach (var x in disposeProjectiles) Projectiles.Remove(x);
             disposeProjectiles.Clear();
 
             Invalidate();
 
-            gameOver();
+            GameOver();
+
+            if (!waveActive)
+            {
+                SpawnWave(currentWave);
+                waveActive = true;
+            }
+            else if (Enemies.Count == 0)
+            {
+                currentWave++;
+                SpawnWave(currentWave);
+            }
 
             playerMovement();
+
+            enemyMovement();
+
+            UpdatePlayerProjectiles();
 
             this.Invalidate();
 
@@ -294,11 +413,14 @@ namespace SpaceInvadersIteration1
                 case Keys.W:
                     Up = true;
                     break;
+                case Keys.Escape:
+                    Application.Exit();
+                    break;
             }
 
             if (e.KeyCode == Keys.Space)
             {
-                ShootBullet(rectPlayer, Projectiles);
+                ShootBullet();
             }
         }
 
@@ -318,6 +440,7 @@ namespace SpaceInvadersIteration1
                 case Keys.W:
                     Up = false;
                     break;
+                
             }
         }
 
@@ -357,90 +480,282 @@ namespace SpaceInvadersIteration1
                 rectPlayer.X = leftPanel.Right;
         }
 
-        private async void enemyMovement()
+        public void enemyMovement()
         {
-            while (true)
-            {
-                Thread.Sleep(300);
-                int dx;
-                if (direction == Direction.Left) dx = -enemySpeed;
-                else dx = enemySpeed;
+            bool hitEdge = false;
 
-                for (int i = 0; i < Enemies.Count; i++)
+            lock (enemyLock)
+            {
+                foreach (Enemy enemy in Enemies)
                 {
-                    Rectangle Enemy = Enemies[i];
-                    Enemy.X += dx;
-                    Enemies[i] = Enemy;
+                    if (!enemy.isAlive) continue;
+                    Rectangle r = enemy.enemyRect;
+                    int move = (direction == Direction.Right) ? enemySpeed : -enemySpeed;
+                    enemy.enemyRect = new Rectangle(r.X + move, r.Y, r.Width, r.Height);
                 }
 
-                bool hitEdge = false;
-                lock (enemyLock)
+                foreach (Enemy enemy in Enemies)
                 {
-                    //if any enemy is touching panel, hitEdge true
-                    foreach (Rectangle Enemy in Enemies)
+                    if (!enemy.isAlive) continue;
+
+                    if (enemy.enemyRect.Right >= ClientSize.Width - rightPanel.Width ||
+                        enemy.enemyRect.Left <= leftPanel.Right)
                     {
-                        if (Enemy.Left < leftPanel.Width || Enemy.Right > ClientSize.Width - rightPanel.Width)
-                        {
-                            hitEdge = true;
-                            break;
-                        }
+                        hitEdge = true;
+                        break;
                     }
                 }
 
                 if (hitEdge)
                 {
-                    //changes Y of every enemy, moves down
-                    for (int i = 0; i < Enemies.Count; i++)
-                    {
-                        Rectangle Enemy = Enemies[i];
-                        Enemy.Y += enemyHeight;
-                        Enemies[i] = Enemy;
-                    }
+                    direction = (direction == Direction.Right) ? Direction.Left : Direction.Right;
 
-                    //changes horizontal direction
-                    if (direction == Direction.Left) direction = Direction.Right;
-                    else direction = Direction.Left;
+                    foreach (Enemy enemy in Enemies)
+                    {
+                        if (!enemy.isAlive) continue;
+                        Rectangle r = enemy.enemyRect;
+                        enemy.enemyRect = new Rectangle(r.X, r.Y + 20, r.Width, r.Height);
+                    }
+                }
+            }
+
+            foreach (Enemy enemy in Enemies)
+            {
+                if (enemy.isAlive && enemy.enemyRect.Bottom >= defence1.Top)
+                {
+                    gameEnd = true;
+                    timer1.Stop();
+                    return;
                 }
             }
         }
 
-        private void gameOver()
+        private void UpdatePlayerProjectiles()
         {
-            gameEnd = false;
+            for (int i = Projectiles.Count - 1; i >= 0; i--)
+            {
+                Projectiles[i].Update();
+
+                if (Projectiles[i].IsOffScreen())
+                {
+                    disposeProjectiles.Add(Projectiles[i]);
+                    continue;
+                }
+
+                bool hitSomething = false;
+
+                lock (enemyLock)
+                {
+                    for (int t = Enemies.Count - 1; t >= 0; t--)
+                    {
+                        if (!Enemies[t].isAlive) continue;
+                        if (Projectiles[i].Rect.IntersectsWith(Enemies[t].enemyRect))
+                        {
+                            Enemies[t].TakeDamage(1);
+                            if (!Enemies[t].isAlive)
+                            {
+                                disposeEnemy.Add(Enemies[t]);
+                                intCurrentScore += Enemies[t].scoreValue;
+                                if (intCurrentScore > intHighScore)
+                                    intHighScore = intCurrentScore;
+                            }
+                            disposeProjectiles.Add(Projectiles[i]);
+                            hitSomething = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hitSomething) continue;
+
+                if (intOpacity1 > 0 && Projectiles[i].Rect.IntersectsWith(defence1))
+                {
+                    DamageDefence(ref intOpacity1, ref defence1);
+                    disposeProjectiles.Add(Projectiles[i]);
+                }
+                else if (intOpacity2 > 0 && Projectiles[i].Rect.IntersectsWith(defence2))
+                {
+                    DamageDefence(ref intOpacity2, ref defence2);
+                    disposeProjectiles.Add(Projectiles[i]);
+                }
+                else if (intOpacity3 > 0 && Projectiles[i].Rect.IntersectsWith(defence3))
+                {
+                    DamageDefence(ref intOpacity3, ref defence3);
+                    disposeProjectiles.Add(Projectiles[i]);
+                }
+            }
+
+            foreach (Enemy x in disposeEnemy) Enemies.Remove(x);
+            disposeEnemy.Clear();
+            foreach (var x in disposeProjectiles) Projectiles.Remove(x);
+            disposeProjectiles.Clear();
+        }
+
+        private void DamageDefence(ref int opacity, ref Rectangle defence)
+        {
+            opacity -= 25;
+            if (opacity <= 0)
+            {
+                opacity = 0;
+                defence = Rectangle.Empty;
+            }
+        }
+
+        private void GameOver()
+        {
+            if (gameOverShown) return;
+
+            if (playerHP <= 0)
+            {
+                gameEnd = true;
+                gameOverShown = true;
+                timer1.Stop();
+                if (!scoreSaved)
+                {
+                    FileManager.addScore(intCurrentScore);
+                    scoreSaved = true;
+                }
+                formGameover formGameover = new formGameover(intCurrentScore);
+                formGameover.ShowDialog();
+                Invalidate();
+                return;
+            }
+            foreach (Enemy enemy in Enemies)
+            {
+                if (enemy.isAlive && enemy.enemyRect.Bottom >= defence1.Top)
+                {
+                    gameEnd = true;
+                    timer1.Stop();
+                    if (!scoreSaved)
+                    {
+                        FileManager.addScore(intCurrentScore);
+                        scoreSaved = true;
+                    }
+                    formGameover formGameover = new formGameover(intCurrentScore);
+                    formGameover.ShowDialog();
+                    Invalidate();
+                    return;
+                }
+            }
+
+            formGameover gameOverForm = new formGameover(intCurrentScore);
+            gameOverForm.ShowDialog();
+
+            scoreSaved = false;
+            gameOverShown = false;
+            RestartGame();
+            SpawnWave(currentWave);
+            waveActive = true;
+        }
+
+        private void ShootBullet()
+        {
+            int bulletX = rectPlayer.X + (rectPlayer.Width / 2) - 2;
+            int bulletY = rectPlayer.Y;
+            Projectile p = new Projectile(bulletX, bulletY, 20);
+            Projectiles.Add(p);
+        }
+
+        private void EnemyShoot()
+        {
             lock (enemyLock)
             {
-                foreach (Rectangle enemy in Enemies)
-                {
-                    if (enemy.Bottom > this.ClientSize.Height)
-                    {
-                        gameEnd = true;
-                    }
+                List<Enemy> aliveEnemies = Enemies.Where(e => e.isAlive).ToList();
+                if (aliveEnemies.Count == 0) return;
 
-                    if (enemy.IntersectsWith(defence3))
-                    {
-                        gameEnd = true;
-                    }
-                }
+                Enemy shooter = aliveEnemies[rng.Next(aliveEnemies.Count)];
+                Point shootPos = shooter.GetShootPosition();
+
+                enemyProjectiles.Add(new Projectile(shootPos.X, shootPos.Y, -15));
             }
-            if (gameEnd)
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            Thread enemyShootThread = new Thread(() =>
             {
-                Application.Exit();
-            }
+                while (!gameEnd)
+                {
+                    Thread.Sleep(enemyShootInterval);
+                    this.Invoke(() => EnemyShoot());
+                }
+            });
+            enemyShootThread.IsBackground = true;
+            enemyShootThread.Start();
+            this.WindowState = FormWindowState.Maximized;
+            this.FormBorderStyle = FormBorderStyle.None;
+            int screenW = Screen.PrimaryScreen.Bounds.Width;
+            int screenH = Screen.PrimaryScreen.Bounds.Height;
+
+            leftPanel = new Rectangle(0, 0, screenW / 10, screenH);
+            rightPanel = new Rectangle(screenW - screenW / 10, 0, screenW / 10, screenH);
+
+            rectPlayer = new Rectangle(screenW / 2 - 30, screenH - 100, 60, 60);
+
+            int defY = screenH - (screenH / 3);
+            defence1 = new Rectangle(leftPanel.Right + 50, defY, 180, 100);
+            defence2 = new Rectangle(screenW / 2 - 90, defY, 180, 100);
+            defence3 = new Rectangle(rightPanel.Left - 230, defY, 180, 100);
+
+            int panelW = leftPanel.Width;
+            lblHighScore.Size = new Size(panelW, 60);
+            lblHighScore.Location = new Point(0, 10);
+            lblCurrentScore.Size = new Size(panelW, 60);
+            lblCurrentScore.Location = new Point(0, 80);
+
+            SpawnWave(currentWave);
+            waveActive = true;
         }
 
-        private void ShootBullet(Rectangle rect, List<Projectile> projectiles)
+        private void RestartGame()
         {
-            int bulletX = rect.X + (rect.Width / 2);
-            int bulletY = rect.Y;
+            intCurrentScore = 0;
+            playerHP = 3;
+            currentWave = 1;
+            waveActive = false;
+            intOpacity1 = 255;
+            intOpacity2 = 255;
+            intOpacity3 = 255;
+            gameEnd = false;
 
-            Projectile p = new Projectile(bulletX, bulletY, 20);
-            projectiles.Add(p);
+            int defY = ClientSize.Height - (ClientSize.Height / 3);
+            defence1 = new Rectangle(leftPanel.Right + leftPanel.Width / 2, defY, 180, 100);
+            defence2 = new Rectangle(ClientSize.Width / 2 - 90, defY, 180, 100);
+            defence3 = new Rectangle(ClientSize.Width - rightPanel.Width * 2 - 180, defY, 180, 100);
+
+            rectPlayer.Location = new Point(ClientSize.Width / 2 - 30, ClientSize.Height - 100);
+
+            Enemies.Clear();
+            Projectiles.Clear();
+            enemyProjectiles.Clear();
+
+            timer1.Start();
+
+            // Restart threads
+            Thread enemyMoveThread = new Thread(() =>
+            {
+                while (!gameEnd)
+                {
+                    Thread.Sleep(enemyMoveInterval);
+                    this.Invoke(() => enemyMovement());
+                }
+            });
+            enemyMoveThread.IsBackground = true;
+            enemyMoveThread.Start();
+
+            Thread enemyShootThread = new Thread(() =>
+            {
+                while (!gameEnd)
+                {
+                    Thread.Sleep(enemyShootInterval);
+                    this.Invoke(() => EnemyShoot());
+                }
+            });
+            enemyShootThread.IsBackground = true;
+            enemyShootThread.Start();
+
+            Invalidate();
         }
-
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            MessageBox.Show($"you lose maybe or win idk here is youe score: {intCurrentScore}");
-        }
-
     }
 }
+
